@@ -1,0 +1,59 @@
+version: '3.9'
+
+services:
+  # PHP (Laravel 実行環境)
+  php:
+    image: php:8.3-fpm
+    container_name: pigly-php
+    volumes:
+      - ./:/var/www/html
+    working_dir: /var/www/html
+    depends_on:
+      - mysql
+    ports:
+      - "9000:9000"
+      - "8000:8000"
+    networks:
+      - laravel-net
+    build:
+      context: .
+      dockerfile: ./docker/php/Dockerfile
+
+  # Nginx (Webサーバー)
+  nginx:
+    image: nginx:latest
+    container_name: pigly-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+    networks:
+      - laravel-net
+
+# MySQL (データベース)
+  mysql:
+    image: mysql:8.0
+    container_name: pigly-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: laravel_db
+      MYSQL_USER: laravel_user
+      MYSQL_PASSWORD: laravel_pass
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf   # ← これを追加！
+    ports:
+      - "3306:3306"
+    networks:
+      - laravel-net
+
+networks:
+  laravel-net:
+
+volumes:
+  mysql_data:
+
